@@ -127,7 +127,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cc_maxopt.m4 \
@@ -148,6 +148,7 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 @NO_ISL_FALSE@am__EXEEXT_1 = generate_test$(EXEEXT)
+@NO_ISL_FALSE@am__EXEEXT_2 = generate_test_advanced$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_generate_test_OBJECTS = generate_test.$(OBJEXT)
 generate_test_OBJECTS = $(am_generate_test_OBJECTS)
@@ -157,6 +158,10 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+am_generate_test_advanced_OBJECTS = generate_test_advanced.$(OBJEXT)
+generate_test_advanced_OBJECTS = $(am_generate_test_advanced_OBJECTS)
+generate_test_advanced_LDADD = $(LDADD)
+generate_test_advanced_DEPENDENCIES = ../libcloog-isl.la
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -191,8 +196,9 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(generate_test_SOURCES)
-DIST_SOURCES = $(generate_test_SOURCES)
+SOURCES = $(generate_test_SOURCES) $(generate_test_advanced_SOURCES)
+DIST_SOURCES = $(generate_test_SOURCES) \
+	$(generate_test_advanced_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -470,6 +476,7 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
@@ -560,9 +567,11 @@ top_srcdir = @top_srcdir@
 versioninfo = @versioninfo@
 @NO_ISL_FALSE@GENERATE_TEST = generate_test
 @NO_ISL_TRUE@GENERATE_TEST = 
+@NO_ISL_FALSE@GENERATE_TEST_ADVANCED = generate_test_advanced
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = ../libcloog-isl.la
 generate_test_SOURCES = generate_test.c
+generate_test_advanced_SOURCES = generate_test_advanced.c
 ROOT = ..
 FINITE_CLOOGTEST_C = \
 	0D-1 \
@@ -758,6 +767,7 @@ SPECIAL_OPTIONS = \
 
 CHECKER := "$(srcdir)/checker.sh"
 TESTS_ENVIRONMENT = \
+	builddir=$(builddir) \
 	top_builddir=$(top_builddir) \
 	srcdir=$(srcdir) \
 	EXEXT=$(EXEEXT) \
@@ -845,6 +855,10 @@ generate_test$(EXEEXT): $(generate_test_OBJECTS) $(generate_test_DEPENDENCIES) $
 	@rm -f generate_test$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(generate_test_OBJECTS) $(generate_test_LDADD) $(LIBS)
 
+generate_test_advanced$(EXEEXT): $(generate_test_advanced_OBJECTS) $(generate_test_advanced_DEPENDENCIES) $(EXTRA_generate_test_advanced_DEPENDENCIES) 
+	@rm -f generate_test_advanced$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(generate_test_advanced_OBJECTS) $(generate_test_advanced_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -852,6 +866,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/generate_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/generate_test_advanced.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -1328,15 +1343,19 @@ generate_good:
 
 valcheck: test_valgrind
 
-test_run: generate_test$(EXEEXT)
+test_run: generate_test_advanced$(EXEEXT)
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_run.sh
 
+test_hybrid: generate_test_advanced$(EXEEXT)
+	$(TESTS_ENVIRONMENT) $(srcdir)/check_hybrid.sh;
+
 test_valgrind:
+	$(RM) -rf $(srcdir)/logs; \
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_c.sh valgrind ; \
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_fortran.sh valgrind ; \
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_strided.sh valgrind ; \
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_openscop.sh valgrind ; \
-	$(TESTS_ENVIRONMENT) $(srcdir)/check_special.sh valgrind
+	$(TESTS_ENVIRONMENT) $(srcdir)/check_special.sh valgrind;
 
 test_regenerate:
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_c.sh regenerate ; \

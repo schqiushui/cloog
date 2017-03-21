@@ -384,6 +384,7 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
@@ -1527,6 +1528,9 @@ dist-hook:
 
 valcheck:
 	$(MAKE) test_valgrind -C test
+
+test_hybrid:
+	$(MAKE) test_hybrid -C test
 
 total:
 	@echo "             /*-----------------------------------------------*"

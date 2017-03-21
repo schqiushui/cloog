@@ -41,3 +41,6 @@ test/generate_test*
 test/test_main*
 test/test_test*
 test/temp_generated*
+
+isl/
+osl/

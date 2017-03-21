@@ -41,11 +41,13 @@ if NO_ISL
 GENERATE_TEST =
 else
 GENERATE_TEST = generate_test
+GENERATE_TEST_ADVANCED = generate_test_advanced
 endif
-noinst_PROGRAMS = $(GENERATE_TEST)
+noinst_PROGRAMS = $(GENERATE_TEST) $(GENERATE_TEST_ADVANCED)
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = ../libcloog-isl.la
 generate_test_SOURCES = generate_test.c
+generate_test_advanced_SOURCES = generate_test_advanced.c
 
 FORCE:
 ../libcloog-isl.la: FORCE
@@ -293,6 +295,7 @@ valcheck: test_valgrind
 CHECKER := "$(srcdir)/checker.sh"
 
 TESTS_ENVIRONMENT = \
+	builddir=$(builddir) \
 	top_builddir=$(top_builddir) \
 	srcdir=$(srcdir) \
 	EXEXT=$(EXEEXT) \
@@ -306,15 +309,19 @@ TESTS_ENVIRONMENT = \
 	CLOOGTEST_OPENSCOP="$(CLOOGTEST_OPENSCOP)" \
 	SPECIAL_OPTIONS="$(SPECIAL_OPTIONS)"
 
-test_run: generate_test$(EXEEXT)
+test_run: generate_test_advanced$(EXEEXT)
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_run.sh
 
+test_hybrid: generate_test_advanced$(EXEEXT)
+	$(TESTS_ENVIRONMENT) $(srcdir)/check_hybrid.sh;
+
 test_valgrind:
+	$(RM) -rf $(srcdir)/logs; \
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_c.sh valgrind ; \
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_fortran.sh valgrind ; \
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_strided.sh valgrind ; \
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_openscop.sh valgrind ; \
-	$(TESTS_ENVIRONMENT) $(srcdir)/check_special.sh valgrind
+	$(TESTS_ENVIRONMENT) $(srcdir)/check_special.sh valgrind;
 
 test_regenerate:
 	$(TESTS_ENVIRONMENT) $(srcdir)/check_c.sh regenerate ; \

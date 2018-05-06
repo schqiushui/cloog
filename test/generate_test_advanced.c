@@ -55,6 +55,7 @@ struct bounds {
   } lowerbound;
 };
 
+#ifdef DEBUG
 static void print_bounds(FILE *out, struct bounds *bounds) {
   unsigned end = bounds->names.nb_names;
   unsigned i;
@@ -68,6 +69,7 @@ static void print_bounds(FILE *out, struct bounds *bounds) {
     fprintf(out, "\n");
   }
 }
+#endif
 
 
 #define get_lowerbound(bounds,where) ( (bounds)->lowerbound.value->p[(where)] )
@@ -232,7 +234,7 @@ static bool get_expression_reduction_bound(struct clast_reduction *reduc,
     char which_bound,
     cloog_int_t *bound) {
 
-  bool valid;
+  bool valid = false;
   switch (reduc->type) {
     case clast_red_sum:
       valid = get_expression_reduction_sum_bound(reduc, bounds,
@@ -255,7 +257,7 @@ static bool get_expression_bin_bound(struct clast_binary *bin,
     char which_bound,
     cloog_int_t *bound) {
 
-  bool valid;
+  bool valid = false;
 
   switch (bin->type) {
     case clast_bin_div:
@@ -287,7 +289,7 @@ static bool get_expression_bound(struct clast_expr *expr,
     char which_bound,
     cloog_int_t *bound) {
 
-  bool valid;
+  bool valid = false;
   switch (expr->type) {
     case clast_expr_name :
       valid = get_expression_name_bound((struct clast_name*) expr,
@@ -599,7 +601,7 @@ static bool update_expr_red_bound(struct clast_reduction *reduction,
     cloog_int_t value, struct bounds *bounds, char which_bound,
     cloog_int_t div) {
 
-  bool retval;
+  bool retval = false;
 
   switch (reduction->type) {
     case clast_red_sum:
@@ -812,7 +814,7 @@ static void print_statement_macro(FILE *out, struct bounds *bounds){
     fprintf(out, "p%u", i);
   }
   fprintf(out, ");\\\n");
-  fprintf(out, "exit(EXIT_FAILURE);\\\n} } while(0)\n");
+  fprintf(out, "exit(2);\\\n} } while(0)\n");
 }
 
 static void print_good_test_declaration(FILE *out, struct bounds *bounds){
@@ -880,7 +882,8 @@ static void print_macros(FILE *file){
 }
 
 static const char postamble[] =
-"fprintf(stderr, \"\\x1b[1m\\x1b[35mWarning : it may be possible that the test did not compute anything\\n\\x1b[0m\");\n"
+"fprintf(stderr, \"\\x1b[1m\\x1b[35mWarning : it may be possible that the test "
+"did not compute anything\\n\\x1b[0m\");\nreturn 1;"
 "}\nreturn EXIT_SUCCESS;\n}\n";
 
 #if _POSIX_C_SOURCE >=2 || _XOPEN_SOURCE
@@ -901,7 +904,7 @@ static inline void print_help(FILE *out) {
   fprintf(out, "\x1b[1m%s\x1b[0m", help);
 }
 
-static const char getopt_flags[] = "ohl:u:m:";
+static const char getopt_flags[] = "+ohl:u:m:";
 
 int main(int argc, char **argv) {
 
@@ -942,12 +945,14 @@ int main(int argc, char **argv) {
         break;
     }
   }
-  if ((argc - optind) != 2) {
+
+  if ((argc - optind) < 2) {
     fprintf(stderr,
         "\x1b[1m\x1b[31mError: Bad arguments\x1b[0m\n\n");
     print_help(stderr);
     return EXIT_FAILURE;
   }
+
   input_name = argv[optind];
   output_name = argv[optind + 1];
 
@@ -978,7 +983,17 @@ int main(int argc, char **argv) {
   }
 
   state = cloog_state_malloc();
-  options = cloog_options_malloc(state);
+  FILE *input = NULL, *output = NULL;
+  cloog_options_read(state, argc-1, argv+1, &input, &output, &options);
+  if (input != NULL && input != stdin)
+    fclose(input);
+  if (output != NULL && output != stdout)
+    fclose(output);
+  options->name = NULL; // No need to free because it is pointing to argv ...
+#ifdef DEBUG
+  cloog_options_print(stderr, options);
+#endif
+
   if (set_openscop_option)
     options->openscop = 1;
   program = cloog_program_read(input_file, options);
